@@ -52,17 +52,20 @@ extension FlickrClient {
         }
     }
     
-    func downloadPhoto(with imageURL: String, completionHandlerForDownloadPhoto: (Any?) -> Void) {
+    func downloadPhoto(with imageURL: String, completionHandlerForDownloadPhoto: @escaping (Any?) -> Void) {
         guard let url = URL(string: imageURL) else {
             return
         }
         
-        do {
-            let imageData = try Data(contentsOf: url)
-            completionHandlerForDownloadPhoto(imageData)
-        } catch {
-            print(error.localizedDescription)
-            completionHandlerForDownloadPhoto(nil)
+        // Download photos in a background thread
+        DispatchQueue.global(qos: .background).async {
+            do {
+                let imageData = try Data(contentsOf: url)
+                completionHandlerForDownloadPhoto(imageData)
+            } catch {
+                print(error.localizedDescription)
+                completionHandlerForDownloadPhoto(nil)
+            }
         }
     }
 }
