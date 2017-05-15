@@ -18,6 +18,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
     var deletePhotosModeIsOn: Bool = false
     var stack: CoreDataStack!
     var flickrClientParameterValuePage: Int!
+    var imageURLs = [String]()
 
     var fetchedResultsController : NSFetchedResultsController<NSFetchRequestResult>? {
         didSet {
@@ -85,6 +86,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
         if deletePhotosModeIsOn {
             for indexPath in selectedPhotosIndexes {
                 stack.context.delete(fetchedResultsController?.object(at: indexPath) as! Photo)
+                imageURLs.remove(at: indexPath.item)
             }
             
             selectedPhotosIndexes.removeAll()
@@ -98,6 +100,8 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
             for object in (fetchedResultsController?.fetchedObjects)! {
                 stack.context.delete(object as! NSManagedObject)
             }
+            
+            self.imageURLs.removeAll()
             
             flickrClientParameterValuePage = flickrClientParameterValuePage + 1
             pin.photosPage = Int16(flickrClientParameterValuePage)
@@ -141,10 +145,13 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
         ]
         
         FlickrClient().shared.searchPhotos(with: methodParameters as [String : AnyObject]) { (photos, error) in
+            print("Download has started")
             
             guard let photos = photos as? [[String : AnyObject]] else {
                 return
             }
+            
+            print(photos.count)
             
             if photos.count == 0 {
                 performUIUpdatesOnMain(updates: { 
@@ -156,14 +163,10 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
                 
                 for photo in photos {
                     let url = photo[FlickrClient.ResponseKeys.SmallURL] as! String
+                    self.imageURLs.append(url)
                     
-                    FlickrClient().shared.downloadPhoto(with: url) { (imageData) in
-                        
-                        if let imageData = imageData as? Data {
-                            let pinPhoto = Photo(image: UIImage(data: imageData)!, context: self.stack.context)
-                            pinPhoto.pin = self.pin
-                        }
-                    }
+                    let pinPhoto = Photo(image: UIImage(named:"PlaceholderImage")!, context: self.stack.context)
+                    pinPhoto.pin = self.pin
                     
                 }
                 
@@ -240,15 +243,36 @@ extension PhotoAlbumViewController: UICollectionViewDataSource {
         let reuseIdentifier = "PhotoCell"
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! PhotoCollectionViewCell
-        
+        cell.backgroundColor = .red
         cell.imageView.image = UIImage(named: "PlaceholderImage")
         cell.imageView.alpha = CGFloat(UIConstants.PhotoCollectionView.UnselectedItemImageViewAlpha)
         cell.activityIndicator.startAnimating()
         
         if let photoObject = self.fetchedResultsController?.object(at: indexPath) as? Photo {
             if let imageData = photoObject.image {
-                cell.imageView.image = UIImage(data: imageData as Data)
-                cell.activityIndicator.stopAnimating()
+                if imageData.isEqual(to: UIImagePNGRepresentation(UIImage(named: "PlaceholderImage")!)!) {
+                    let url = imageURLs[indexPath.item]
+                    FlickrClient().shared.downloadPhoto(with: url, completionHandlerForDownloadPhoto: { (imageData) in
+                        if let imageData = imageData as? Data {
+                            performUIUpdatesOnMain {
+                                photoObject.image = UIImagePNGRepresentation(UIImage(data: imageData as Data)!) as NSData?
+                                cell.imageView.image = UIImage(data: imageData as Data)
+                                cell.activityIndicator.stopAnimating()
+                            }
+                            
+                            
+                        }
+                    })
+                    
+                } else {
+                    performUIUpdatesOnMain {
+                        cell.imageView.image = UIImage(data: imageData as Data)
+                        cell.activityIndicator.stopAnimating()
+                    }
+                    
+                    
+                }
+                
             }
         }
         
@@ -335,48 +359,45 @@ extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         
         switch type {
-            
-        case .insert:
-            guard let newIndexPath = newIndexPath else { return }
-            let op = BlockOperation { [weak self] in self?.photoCollectionView.insertItems(at: [newIndexPath]) }
-            blockOperations.append(op)
-            
-        case .update:
-            guard let newIndexPath = newIndexPath else { return }
-            let op = BlockOperation { [weak self] in self?.photoCollectionView.reloadItems(at: [newIndexPath]) }
-            blockOperations.append(op)
-            
-        case .move:
-            guard let indexPath = indexPath else { return }
-            guard let newIndexPath = newIndexPath else { return }
-            let op = BlockOperation { [weak self] in self?.photoCollectionView.moveItem(at: indexPath, to: newIndexPath) }
-            blockOperations.append(op)
-            
-        case .delete:
-            guard let indexPath = indexPath else { return }
-            let op = BlockOperation { [weak self] in self?.photoCollectionView.deleteItems(at: [indexPath]) }
-            blockOperations.append(op)
-            
+            case .insert:
+                guard let newIndexPath = newIndexPath else { return }
+                let op = BlockOperation { [weak self] in self?.photoCollectionView.insertItems(at: [newIndexPath]) }
+                blockOperations.append(op)
+                
+            case .update:
+                guard let newIndexPath = newIndexPath else { return }
+                let op = BlockOperation { [weak self] in self?.photoCollectionView.reloadItems(at: [newIndexPath]) }
+                blockOperations.append(op)
+                
+            case .move:
+                guard let indexPath = indexPath else { return }
+                guard let newIndexPath = newIndexPath else { return }
+                let op = BlockOperation { [weak self] in self?.photoCollectionView.moveItem(at: indexPath, to: newIndexPath) }
+                blockOperations.append(op)
+                
+            case .delete:
+                guard let indexPath = indexPath else { return }
+                let op = BlockOperation { [weak self] in self?.photoCollectionView.deleteItems(at: [indexPath]) }
+                blockOperations.append(op)
         }
     }
     
     func controller(controller: NSFetchedResultsController<NSFetchRequestResult>, didChangeSection sectionInfo: NSFetchedResultsSectionInfo, atIndex sectionIndex: Int, forChangeType type: NSFetchedResultsChangeType) {
         
         switch type {
-            
-        case .insert:
-            let op = BlockOperation { [weak self] in self?.photoCollectionView.insertSections(NSIndexSet(index: sectionIndex) as IndexSet) }
-            blockOperations.append(op)
-            
-        case .update:
-            let op = BlockOperation { [weak self] in self?.photoCollectionView.reloadSections(NSIndexSet(index: sectionIndex) as IndexSet) }
-            blockOperations.append(op)
-            
-        case .delete:
-            let op = BlockOperation { [weak self] in self?.photoCollectionView.deleteSections(NSIndexSet(index: sectionIndex) as IndexSet) }
-            blockOperations.append(op)
-            
-        default: break
+            case .insert:
+                let op = BlockOperation { [weak self] in self?.photoCollectionView.insertSections(NSIndexSet(index: sectionIndex) as IndexSet) }
+                blockOperations.append(op)
+                
+            case .update:
+                let op = BlockOperation { [weak self] in self?.photoCollectionView.reloadSections(NSIndexSet(index: sectionIndex) as IndexSet) }
+                blockOperations.append(op)
+                
+            case .delete:
+                let op = BlockOperation { [weak self] in self?.photoCollectionView.deleteSections(NSIndexSet(index: sectionIndex) as IndexSet) }
+                blockOperations.append(op)
+                
+            default: break
             
         }
     }
