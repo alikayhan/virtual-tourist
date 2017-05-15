@@ -38,6 +38,7 @@
 		B80A21CE1D93E33200AEB6C2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B80A21D41D93E51500AEB6C2 /* PhotoAlbumViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoAlbumViewController.swift; sourceTree = "<group>"; };
 		B81AB5241E5C7A0C006FCCAF /* PhotoCollectionViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PhotoCollectionViewCell.swift; path = "Virtual Tourist/PhotoCollectionViewCell.swift"; sourceTree = "<group>"; };
+		B84285C81ECA29670072B611 /* DataModel 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "DataModel 2.xcdatamodel"; sourceTree = "<group>"; };
 		B844446B1E50D36C003D2BAA /* FlickrClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FlickrClient.swift; path = FlickrClient/FlickrClient.swift; sourceTree = "<group>"; };
 		B844446D1E50ED8F003D2BAA /* FlickrConstants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FlickrConstants.swift; path = FlickrClient/FlickrConstants.swift; sourceTree = "<group>"; };
 		B844446F1E530B9E003D2BAA /* FlickrConvenience.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FlickrConvenience.swift; path = FlickrClient/FlickrConvenience.swift; sourceTree = "<group>"; };
@@ -431,9 +432,10 @@
 		B89F1A2D1E62D28E00A6470E /* DataModel.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				B84285C81ECA29670072B611 /* DataModel 2.xcdatamodel */,
 				B89F1A2E1E62D28E00A6470E /* DataModel.xcdatamodel */,
 			);
-			currentVersion = B89F1A2E1E62D28E00A6470E /* DataModel.xcdatamodel */;
+			currentVersion = B84285C81ECA29670072B611 /* DataModel 2.xcdatamodel */;
 			name = DataModel.xcdatamodeld;
 			path = DataModel/DataModel.xcdatamodeld;
 			sourceTree = "<group>";

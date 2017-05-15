@@ -165,7 +165,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
                     let url = photo[FlickrClient.ResponseKeys.SmallURL] as! String
                     self.imageURLs.append(url)
                     
-                    let pinPhoto = Photo(image: UIImage(named:"PlaceholderImage")!, context: self.stack.context)
+                    let pinPhoto = Photo(image: UIImage(named:"PlaceholderImage")!, url: url, context: self.stack.context)
                     pinPhoto.pin = self.pin
                     
                 }
