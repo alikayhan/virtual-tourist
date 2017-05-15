@@ -236,10 +236,15 @@ extension PhotoAlbumViewController: UICollectionViewDataSource {
         let reuseIdentifier = "PhotoCell"
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! PhotoCollectionViewCell
-        cell.backgroundColor = .red
+        
         cell.imageView.image = UIImage(named: "PlaceholderImage")
         cell.imageView.alpha = CGFloat(UIConstants.PhotoCollectionView.UnselectedItemImageViewAlpha)
         cell.activityIndicator.startAnimating()
+        
+        // Add cell tag to check below while assigning cell.imageView's image
+        // so that image flickering and wrong image displaying will not occur
+        // due to cell reuse
+        cell.tag = indexPath.item
         
         if let photoObject = self.fetchedResultsController?.object(at: indexPath) as? Photo {
             if let imageData = photoObject.image {
@@ -248,10 +253,15 @@ extension PhotoAlbumViewController: UICollectionViewDataSource {
                     
                     FlickrClient().shared.downloadPhoto(with: url, completionHandlerForDownloadPhoto: { (imageData) in
                         if let imageData = imageData as? Data {
-                            performUIUpdatesOnMain {
+                            
+                            // Check if the cell object is the one to assign the downloaded image
+                            // or a reused one which has a different tag than indexPath.item
+                            if cell.tag == indexPath.item {
                                 photoObject.image = UIImagePNGRepresentation(UIImage(data: imageData as Data)!) as NSData?
-                                cell.imageView.image = UIImage(data: imageData as Data)
-                                cell.activityIndicator.stopAnimating()
+                                performUIUpdatesOnMain {
+                                    cell.imageView.image = UIImage(data: imageData)
+                                    cell.activityIndicator.stopAnimating()
+                                }
                             }
                         }
                     })
