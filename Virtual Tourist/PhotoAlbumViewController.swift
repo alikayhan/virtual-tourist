@@ -140,13 +140,10 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
         ]
         
         FlickrClient().shared.searchPhotos(with: methodParameters as [String : AnyObject]) { (photos, error) in
-            print("Download has started")
             
             guard let photos = photos as? [[String : AnyObject]] else {
                 return
             }
-            
-            print(photos.count)
             
             if photos.count == 0 {
                 performUIUpdatesOnMain(updates: { 

@@ -162,8 +162,7 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
     }
     
     fileprivate func savePin(at touchCoordinate: CLLocationCoordinate2D) {
-        let pin = Pin(latitude: touchCoordinate.latitude, longitude: touchCoordinate.longitude, insertInto: stack.context)
-        print("\(pin) has been saved.")
+        _ = Pin(latitude: touchCoordinate.latitude, longitude: touchCoordinate.longitude, insertInto: stack.context)
         
         // In order not to lose pin data in a case of crash etc, context is saved immediately
         // without waiting for auto save.
