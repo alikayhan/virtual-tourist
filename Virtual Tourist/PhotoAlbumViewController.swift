@@ -18,7 +18,6 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
     var deletePhotosModeIsOn: Bool = false
     var stack: CoreDataStack!
     var flickrClientParameterValuePage: Int!
-    var imageURLs = [String]()
 
     var fetchedResultsController : NSFetchedResultsController<NSFetchRequestResult>? {
         didSet {
@@ -86,7 +85,6 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
         if deletePhotosModeIsOn {
             for indexPath in selectedPhotosIndexes {
                 stack.context.delete(fetchedResultsController?.object(at: indexPath) as! Photo)
-                imageURLs.remove(at: indexPath.item)
             }
             
             selectedPhotosIndexes.removeAll()
@@ -94,14 +92,11 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
             configureBottomButtonByDeletePhotosMode(isOn: false)
             
         } else {
-            
             self.noPhotosLabel.isHidden = true
             
             for object in (fetchedResultsController?.fetchedObjects)! {
                 stack.context.delete(object as! NSManagedObject)
             }
-            
-            self.imageURLs.removeAll()
             
             flickrClientParameterValuePage = flickrClientParameterValuePage + 1
             pin.photosPage = Int16(flickrClientParameterValuePage)
@@ -163,7 +158,6 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
                 
                 for photo in photos {
                     let url = photo[FlickrClient.ResponseKeys.SmallURL] as! String
-                    self.imageURLs.append(url)
                     
                     let pinPhoto = Photo(image: UIImage(named:"PlaceholderImage")!, url: url, context: self.stack.context)
                     pinPhoto.pin = self.pin
@@ -214,7 +208,6 @@ extension PhotoAlbumViewController {
     fileprivate func setUI(enabled: Bool) {
         performUIUpdatesOnMain {
             self.bottomButton.isEnabled = enabled
-            // self.photoCollectionView.isUserInteractionEnabled = enabled
             
             if enabled {
                 self.bottomButton.alpha = 1.0
@@ -251,7 +244,8 @@ extension PhotoAlbumViewController: UICollectionViewDataSource {
         if let photoObject = self.fetchedResultsController?.object(at: indexPath) as? Photo {
             if let imageData = photoObject.image {
                 if imageData.isEqual(to: UIImagePNGRepresentation(UIImage(named: "PlaceholderImage")!)!) {
-                    let url = imageURLs[indexPath.item]
+                    guard let url = photoObject.url else { return cell }
+                    
                     FlickrClient().shared.downloadPhoto(with: url, completionHandlerForDownloadPhoto: { (imageData) in
                         if let imageData = imageData as? Data {
                             performUIUpdatesOnMain {
@@ -259,23 +253,16 @@ extension PhotoAlbumViewController: UICollectionViewDataSource {
                                 cell.imageView.image = UIImage(data: imageData as Data)
                                 cell.activityIndicator.stopAnimating()
                             }
-                            
-                            
                         }
                     })
-                    
                 } else {
                     performUIUpdatesOnMain {
                         cell.imageView.image = UIImage(data: imageData as Data)
                         cell.activityIndicator.stopAnimating()
                     }
-                    
-                    
                 }
-                
             }
         }
-        
         return cell
     }
 }
@@ -315,7 +302,6 @@ extension PhotoAlbumViewController: UICollectionViewDelegate {
             performUIUpdatesOnMain(updates: {
                 cell.imageView.alpha = CGFloat(UIConstants.PhotoCollectionView.UnselectedItemImageViewAlpha)
             })
-            
             
             if selectedPhotosIndexes.isEmpty {
                 self.deletePhotosModeIsOn = false
