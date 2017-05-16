@@ -87,6 +87,13 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
                 stack.context.delete(fetchedResultsController?.object(at: indexPath) as! Photo)
             }
             
+            // Save context after photo objects are deleted
+            do {
+                try self.stack.saveContext()
+            } catch {
+                print(error.localizedDescription)
+            }
+            
             selectedPhotosIndexes.removeAll()
             deletePhotosModeIsOn = false
             configureBottomButtonByDeletePhotosMode(isOn: false)
@@ -159,6 +166,13 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
                     let pinPhoto = Photo(image: UIImage(named:"PlaceholderImage")!, url: url, context: self.stack.context)
                     pinPhoto.pin = self.pin
                     
+                }
+                
+                // Save context after photo objects are created
+                do {
+                    try self.stack.saveContext()
+                } catch {
+                    print(error.localizedDescription)
                 }
                 
                 self.setUI(enabled: true)
