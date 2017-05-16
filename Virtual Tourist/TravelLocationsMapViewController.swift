@@ -148,7 +148,7 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
     }
     
     @objc fileprivate func addAnnotation(gestureRecognizer: UIGestureRecognizer) {
-        if gestureRecognizer.state == .ended {
+        if gestureRecognizer.state == .began {
             let touchPoint = gestureRecognizer.location(in: mapView)
             let touchCoordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
             
