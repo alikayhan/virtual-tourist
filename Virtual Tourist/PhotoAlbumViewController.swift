@@ -170,14 +170,14 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
                         if let editablePin = workerContext.object(with: pinID) as? Pin {
                           pinPhoto.pin = editablePin
                         }
+                        
+                        // Save context after photo object is created
+                        do {
+                            try self.stack.saveContext()
+                        } catch {
+                            print(error.localizedDescription)
+                        }
                     })
-                }
-                
-                // Save context after photo objects are created
-                do {
-                    try self.stack.saveContext()
-                } catch {
-                    print(error.localizedDescription)
                 }
                 
                 self.setUI(enabled: true)
@@ -277,6 +277,13 @@ extension PhotoAlbumViewController: UICollectionViewDataSource {
                                 // Since photoObject is in main context now, access and modify it by main context's perform block method
                                 self.stack.context.perform({ 
                                     photoObject.image = UIImagePNGRepresentation(UIImage(data: imageData as Data)!) as NSData?
+                                    
+                                    // Save context after photo object is modified
+                                    do {
+                                        try self.stack.saveContext()
+                                    } catch {
+                                        print(error.localizedDescription)
+                                    }
                                 })
                                 
                                 performUIUpdatesOnMain {

@@ -91,6 +91,14 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
             }
             
             stack.context.delete(selectedPin)
+            
+            // Save context after pin is deleted
+            do {
+                try self.stack.saveContext()
+            } catch {
+                print(error.localizedDescription)
+            }
+            
             return
         } else {
             performSegue(withIdentifier: "UserDidTapAPin", sender: nil)
@@ -152,12 +160,14 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
             let touchPoint = gestureRecognizer.location(in: mapView)
             let touchCoordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
             
+            performUIUpdatesOnMain {
+                let annotation = MKPointAnnotation()
+                annotation.coordinate = touchCoordinate
+                
+                self.mapView.addAnnotation(annotation)
+            }
+            
             savePin(at: touchCoordinate)
-            
-            let annotation = MKPointAnnotation()
-            annotation.coordinate = touchCoordinate
-            
-            mapView.addAnnotation(annotation)
         }
     }
     
@@ -166,15 +176,15 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
         // Use Core Data concurrency principles (background writer & main queue reader)
         stack.performBackgroundBatchOperation { (workerContext) in
             _ = Pin(latitude: touchCoordinate.latitude, longitude: touchCoordinate.longitude, insertInto: workerContext)
-        }
-        
-        // In order not to lose pin data in a case of crash etc, context is saved immediately
-        // without waiting for auto save.
-        do {
-            try stack.saveContext()
-        } catch {
-            print(error.localizedDescription)
-        }
+            
+            // In order not to lose pin data in a case of crash etc, context is saved immediately
+            // without waiting for auto save.
+            do {
+                try self.stack.saveContext()
+            } catch {
+                print(error.localizedDescription)
+            }
+        }       
     }
     
     // MARK: - Populate Map
