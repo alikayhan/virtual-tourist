@@ -130,7 +130,6 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
     }
     
     // MARK: - Helper Functions
-    
     fileprivate func searchPhotos(with lat: Double, and lon: Double) {
         setUI(enabled: false)
         
@@ -158,14 +157,20 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
                     self.noPhotosLabel.isHidden = false
                     self.setUI(enabled: true)
                 })
-            } else {                
-                
+            } else {
                 for photo in photos {
                     let url = photo[FlickrClient.ResponseKeys.SmallURL] as! String
                     
-                    let pinPhoto = Photo(image: UIImage(named:"PlaceholderImage")!, url: url, context: self.stack.context)
-                    pinPhoto.pin = self.pin
-                    
+                    // Use Core Data concurrency principles (background writer & main queue reader)
+                    self.stack.performBackgroundBatchOperation({ (workerContext) in
+                        let pinPhoto = Photo(image: UIImage(named:"PlaceholderImage")!, url: url, context: workerContext)
+                        
+                        // Since pinPhoto is not in main context yet, retrieve managed object ID of pin in order to pass references between different queues. Look at the end of the page at https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/CoreData/Concurrency.html
+                        let pinID = self.pin.objectID
+                        if let editablePin = workerContext.object(with: pinID) as? Pin {
+                          pinPhoto.pin = editablePin
+                        }
+                    })
                 }
                 
                 // Save context after photo objects are created
@@ -268,7 +273,12 @@ extension PhotoAlbumViewController: UICollectionViewDataSource {
                             // Check if the cell object is the one to assign the downloaded image
                             // or a reused one which has a different tag than indexPath.item
                             if cell.tag == indexPath.item {
-                                photoObject.image = UIImagePNGRepresentation(UIImage(data: imageData as Data)!) as NSData?
+                                
+                                // Since photoObject is in main context now, access and modify it by main context's perform block method
+                                self.stack.context.perform({ 
+                                    photoObject.image = UIImagePNGRepresentation(UIImage(data: imageData as Data)!) as NSData?
+                                })
+                                
                                 performUIUpdatesOnMain {
                                     cell.imageView.image = UIImage(data: imageData)
                                     cell.activityIndicator.stopAnimating()

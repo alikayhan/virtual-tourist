@@ -162,7 +162,11 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
     }
     
     fileprivate func savePin(at touchCoordinate: CLLocationCoordinate2D) {
-        _ = Pin(latitude: touchCoordinate.latitude, longitude: touchCoordinate.longitude, insertInto: stack.context)
+        
+        // Use Core Data concurrency principles (background writer & main queue reader)
+        stack.performBackgroundBatchOperation { (workerContext) in
+            _ = Pin(latitude: touchCoordinate.latitude, longitude: touchCoordinate.longitude, insertInto: workerContext)
+        }
         
         // In order not to lose pin data in a case of crash etc, context is saved immediately
         // without waiting for auto save.
