@@ -342,8 +342,8 @@ extension PhotoAlbumViewController: UICollectionViewDelegate {
             })
             
             if selectedPhotosIndexes.isEmpty {
-                self.deletePhotosModeIsOn = false
-                self.configureBottomButtonByDeletePhotosMode(isOn: self.deletePhotosModeIsOn)
+                deletePhotosModeIsOn = false
+                configureBottomButtonByDeletePhotosMode(isOn: self.deletePhotosModeIsOn)
             }
         }
     }

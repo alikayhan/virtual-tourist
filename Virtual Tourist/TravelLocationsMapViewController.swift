@@ -24,6 +24,7 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
     
     // MARK: - Lifecycle Functions
     override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         adjustMapRegion()
     }
     
